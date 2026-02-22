@@ -3,12 +3,15 @@ import requests
 import tempfile
 import pdfplumber
 from docx import Document
+from urllib.parse import urlparse
 
 def download_resume(url):
     response = requests.get(url, stream=True)
     response.raise_for_status()
 
-    suffix = url.split('.')[-1]
+     # FIX: Strip query parameters (SAS tokens) before extracting extension
+    parsed = urlparse(url)
+    suffix = parsed.path.split('.')[-1]
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{suffix}")
 
     for chunk in response.iter_content(1024):

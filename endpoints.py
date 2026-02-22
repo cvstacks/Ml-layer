@@ -28,22 +28,25 @@ def process_resume(file_path):
 
     return build_response(extracted["text"], extracted["tables"])
 
-def process_resume_from_url(resume_url: str):
 
+def process_resume_from_url(resume_url: str):
     try:
+        # Download the file from URL (handles SAS tokens correctly now)
         file_path = download_resume(resume_url)
 
         typee = detect_file_type(file_path)
 
-        if typee != 'pdf' or typee != "docx" :
+        # FIX 1: "or" → "not in" (old logic was ALWAYS true)
+        if typee not in ['pdf', 'docx']:
             raise Exception("Unsupported file type")
 
-        llm_result = process_resume(resume_url)
+        # FIX 2: Pass file_path, NOT resume_url
+        llm_result = process_resume(file_path)
 
         if not llm_result:
             raise Exception("LLM parsing failed")
 
-        # Optional: delete temp file
+        # Clean up temp file
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -52,15 +55,15 @@ def process_resume_from_url(resume_url: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/parse-resume")
 def parse_resume(request: ResumeRequest):
-
     return process_resume_from_url(request.resume_url)
+
 
 if __name__ == "__main__":
     resp = process_resume("C:\\Users\\aksha\\Downloads\\Satyam Kumar Mishra Resume.pdf")
     print(resp)
-
     print("done!!!")
 
 
