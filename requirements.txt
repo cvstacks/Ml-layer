@@ -4,4 +4,11 @@ pydantic
 requests
 pdfplumber
 python-docx
-dotenv
+python-dotenv
+sentence-transformers
+scikit-learn
+fastapi
+pdf2docx
+pypandoc
+jinja2
+uvicorn

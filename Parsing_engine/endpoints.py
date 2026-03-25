@@ -35,10 +35,10 @@ def process_resume_from_url(resume_url: str):
 
         typee = detect_file_type(file_path)
 
-        if typee != 'pdf' or typee != "docx" :
+        if typee not in ["pdf", "docx"]:
             raise Exception("Unsupported file type")
 
-        llm_result = process_resume(resume_url)
+        llm_result = process_resume(file_path)
 
         if not llm_result:
             raise Exception("LLM parsing failed")

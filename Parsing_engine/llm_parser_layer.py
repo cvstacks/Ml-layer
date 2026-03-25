@@ -5,13 +5,10 @@ from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from typing import List
 from dotenv import load_dotenv
-from resume_parser import fix_broken_words
+from Parsing_engine.resume_parser import fix_broken_words
 import re
 
 load_dotenv()
-
-from pydantic import BaseModel
-from typing import List
 
 
 class Experience(BaseModel):
@@ -19,7 +16,7 @@ class Experience(BaseModel):
     role: str = ""
     start_date: str = ""
     end_date: str = ""
-    description: str = ""
+    description: List[str] = []
 
 
 class Education(BaseModel):
@@ -32,7 +29,7 @@ class Project(BaseModel):
     title: str = ""
     start_date: str = ""
     end_date: str = ""
-    description: str = ""
+    description: List[str] = []
     link: str = ""
 
 
@@ -46,6 +43,7 @@ class ResumeSchema(BaseModel):
     education: List[Education] = []
     projects: List[Project] = []
     certifications: List[str] = []
+    achievements: List[str] = []
     links: List[str] = []
 
 
@@ -68,6 +66,7 @@ prompt = ChatPromptTemplate.from_messages([
      - If no professional experience exists, return empty list.
      - Preserve spaces correctly in summary.
      - Extract only factual data present in resume.
+     - Extract achievements, awards, honors, and accomplishments into the achievements field.
      - Do NOT hallucinate.
      Return ONLY valid JSON.
      """),
@@ -92,6 +91,11 @@ prompt = ChatPromptTemplate.from_messages([
      9. Do NOT reformat text unless necessary for spacing.
      10. Return ONLY valid JSON.
      11. Do NOT include explanations or markdown.
+     12. For experience: extract each bullet point or responsibility as a separate item in the description list.
+     13. For achievements/awards/honors/accomplishments:
+         - Extract each achievement as a separate string in the "achievements" list.
+         - Include awards, honors, recognitions, publications, and notable accomplishments.
+         - If no achievements section exists, return empty list.
  
      JSON Schema:
  
@@ -107,7 +111,7 @@ prompt = ChatPromptTemplate.from_messages([
            "role": "",
            "start_date": "",
            "end_date": "",
-           "description": ""
+           "description": []
          }}
        ],
        "education": [
@@ -122,11 +126,12 @@ prompt = ChatPromptTemplate.from_messages([
            "title": "",
            "start_date": "",
            "end_date": "",
-           "description": "",
+           "description": [],
            "link": ""
          }}
        ],
        "certifications": [],
+       "achievements": [],
        "links": []
      }}
  
@@ -166,10 +171,32 @@ def parse_resume_with_llm(resume_text: str):
         # Validate using Pydantic
         validated = ResumeSchema(**parsed)
 
-        data = validated.dict()
+        data = validated.model_dump()
 
+        # Normalize project descriptions
         for project in data.get("projects", []):
-            project["description"] = normalize_multiline_text(project.get("description", ""))
+            desc = project.get("description", [])
+
+            if isinstance(desc, list):
+                project["description"] = [normalize_multiline_text(d) for d in desc]
+            else:
+                project["description"] = [normalize_multiline_text(desc)]
+
+        # Normalize experience descriptions
+        for exp in data.get("experience", []):
+            desc = exp.get("description", [])
+
+            if isinstance(desc, list):
+                exp["description"] = [normalize_multiline_text(d) for d in desc]
+            elif isinstance(desc, str) and desc:
+                exp["description"] = [normalize_multiline_text(desc)]
+            else:
+                exp["description"] = []
+
+        # Normalize achievements
+        achievements = data.get("achievements", [])
+        if isinstance(achievements, list):
+            data["achievements"] = [normalize_multiline_text(a) for a in achievements if a]
 
         data["summary"] = fix_broken_words(data.get("summary", ""))
 

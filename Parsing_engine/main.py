@@ -4,6 +4,9 @@ import tempfile
 import pdfplumber
 from docx import Document
 
+from Parsing_engine.resume_parser import build_response
+from Parsing_engine.llm_parser_layer import parse_resume_with_llm
+
 def download_resume(url):
     response = requests.get(url, stream=True)
     response.raise_for_status()
@@ -29,9 +32,24 @@ def detect_file_type(file_path):
         raise ValueError("Unsupported file type")
 
 
+def extract_hyperlinks_from_pdf(page):
+    """Extract hyperlinks from a PDF page's annotations."""
+    hyperlinks = []
+
+    if page.annots:
+        for annot in page.annots:
+            uri = annot.get("uri", None)
+            if uri:
+                hyperlinks.append({"uri": uri})
+
+    return hyperlinks
+
+
 def extract_pdf(file_path):
     full_text = ""
     tables = []
+    hyperlinks = []
+
     with pdfplumber.open(file_path) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
@@ -43,7 +61,22 @@ def extract_pdf(file_path):
             for table in page_tables:
                 tables.append(table)
 
-    return { "text": full_text.strip(), "tables": tables, "hyperlinks": [] }
+            # Extract hyperlinks from annotations
+            page_links = extract_hyperlinks_from_pdf(page)
+            hyperlinks.extend(page_links)
+
+    return { "text": full_text.strip(), "tables": tables, "hyperlinks": hyperlinks }
+
+
+def extract_hyperlinks_from_docx(doc):
+    """Extract hyperlinks from a DOCX document."""
+    hyperlinks = []
+
+    for rel in doc.part.rels.values():
+        if "hyperlink" in rel.reltype:
+            hyperlinks.append({"uri": rel.target_ref})
+
+    return hyperlinks
 
 
 def extract_docx(file_path):
@@ -59,10 +92,12 @@ def extract_docx(file_path):
             table_data.append([cell.text.strip() for cell in row.cells])
         tables.append(table_data)
 
+    hyperlinks = extract_hyperlinks_from_docx(doc)
+
     return {
         "text": full_text.strip(),
         "tables": tables,
-        "hyperlinks": []
+        "hyperlinks": hyperlinks
     }
 
 
