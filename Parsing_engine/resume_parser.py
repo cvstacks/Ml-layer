@@ -131,19 +131,29 @@ def extract_achievements(text):
     return achievements
 
 def build_response(text, tables):
-
+    """
+    Fallback parser when LLM fails.
+    Returns a schema-compatible dict so Java deserialization never breaks.
+    experience/education/projects are always lists, never plain strings.
+    """
     text = clean_text(text)
     sections = split_sections(text)
+    personal = extract_personal_info(text)
+
+    # Extract name heuristic: first non-empty line before any section
+    first_lines = [l.strip() for l in text.split("\n") if l.strip()]
+    name = first_lines[0] if first_lines else ""
 
     return {
-        "personal_info": extract_personal_info(text),
+        "name": name,
+        "email": personal.get("email", ""),
+        "phone": personal.get("phone", ""),
         "summary": sections.get("summary", ""),
         "skills": extract_skills(sections.get("skills", "")),
-        "experience": sections.get("experience", ""),
-        "education": sections.get("education", ""),
-        "projects": sections.get("projects", ""),
-        "certifications": sections.get("certifications", ""),
+        "experience": [],   # Raw text can't be parsed into structured list — return empty
+        "education": [],    # Same reason — LLM is required for structured extraction
+        "projects": [],
+        "certifications": [],
         "achievements": extract_achievements(sections.get("achievements", "")),
-        "languages": sections.get("languages", ""),
-        "tables": tables
-    }
+        "links": personal.get("links", []),
+    }

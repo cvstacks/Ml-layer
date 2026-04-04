@@ -7,8 +7,10 @@ python-docx
 python-dotenv
 sentence-transformers
 scikit-learn
+numpy
 fastapi
+uvicorn
+python-multipart
 pdf2docx
 pypandoc
 jinja2
-uvicorn

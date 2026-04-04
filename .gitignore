@@ -1,1 +1,9 @@
 .env
+venv/
+__pycache__/
+*.pyc
+.idea/
+err.txt
+error.txt
+temp_status.txt
+temp_status_utf8.txt

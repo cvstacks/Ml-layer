@@ -1,8 +1,7 @@
 from datetime import datetime
 import re
 
-from Analysis_and_Suggestion_engine.jd_parser import JDRequirements
-from Parsing_engine.llm_parser_layer import ResumeSchema
+from Analysis_and_Suggestion_engine.Schema import ResumeSchema, JDRequirements
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -148,23 +147,24 @@ def embedding_hard_skill_score(resume: ResumeSchema, jd: JDRequirements, thresho
     resume_embeddings = model.encode(resume_corpus)
     matched = []
     missing = []
-    score_sum = 0
+    score_sum = 0.0
 
     for skill in jd.required_skills:
         skill_embedding = model.encode([skill])
 
         similarities = cosine_similarity(skill_embedding, resume_embeddings)[0]
-        max_similarity = np.max(similarities)
+        max_similarity = float(np.max(similarities))  # cast numpy → Python float
 
         if max_similarity >= threshold:
-            score_sum += max_similarity  
+            score_sum += max_similarity
             matched.append(skill)
         else:
             missing.append(skill)
 
     final_score = score_sum / len(jd.required_skills) if jd.required_skills else 1.0
 
-    return final_score, matched, missing
+    return float(final_score), matched, missing
+
 
 def embedding_preferred_skill_score(resume: ResumeSchema, jd: JDRequirements, threshold=0.6):
 
@@ -174,17 +174,17 @@ def embedding_preferred_skill_score(resume: ResumeSchema, jd: JDRequirements, th
         return 1.0
 
     resume_embeddings = model.encode(resume_corpus)
-    score_sum = 0
+    score_sum = 0.0
 
     for skill in jd.preferred_skills:
         skill_embedding = model.encode([skill])
         similarities = cosine_similarity(skill_embedding, resume_embeddings)[0]
-        max_similarity = np.max(similarities)
+        max_similarity = float(np.max(similarities))  # cast numpy → Python float
 
         if max_similarity >= threshold:
             score_sum += max_similarity
 
-    return score_sum / len(jd.preferred_skills)
+    return float(score_sum / len(jd.preferred_skills))
 
 def embedding_education_similarity(jd_text, resume_text):
 

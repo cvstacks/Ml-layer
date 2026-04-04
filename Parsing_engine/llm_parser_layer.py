@@ -2,8 +2,8 @@ import os
 import json
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
 from dotenv import load_dotenv
 from Parsing_engine.resume_parser import fix_broken_words
 import re
@@ -12,32 +12,48 @@ load_dotenv()
 
 
 class Experience(BaseModel):
-    company: str = ""
-    role: str = ""
-    start_date: str = ""
-    end_date: str = ""
+    company: Optional[str] = ""
+    role: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
     description: List[str] = []
+
+    # Coerce None → "" for all string fields
+    @field_validator('company', 'role', 'start_date', 'end_date', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class Education(BaseModel):
-    institution: str = ""
-    degree: str = ""
-    year: str = ""
+    institution: Optional[str] = ""
+    degree: Optional[str] = ""
+    year: Optional[str] = ""
+
+    @field_validator('institution', 'degree', 'year', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class Project(BaseModel):
-    title: str = ""
-    start_date: str = ""
-    end_date: str = ""
+    title: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
     description: List[str] = []
-    link: str = ""
+    link: Optional[str] = ""
+
+    @field_validator('title', 'start_date', 'end_date', 'link', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class ResumeSchema(BaseModel):
-    name: str = ""
-    email: str = ""
-    phone: str = ""
-    summary: str = ""
+    name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    summary: Optional[str] = ""
     skills: List[str] = []
     experience: List[Experience] = []
     education: List[Education] = []
@@ -45,6 +61,11 @@ class ResumeSchema(BaseModel):
     certifications: List[str] = []
     achievements: List[str] = []
     links: List[str] = []
+
+    @field_validator('name', 'email', 'phone', 'summary', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 

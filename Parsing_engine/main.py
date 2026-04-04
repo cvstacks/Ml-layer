@@ -11,7 +11,12 @@ def download_resume(url):
     response = requests.get(url, stream=True)
     response.raise_for_status()
 
-    suffix = url.split('.')[-1]
+    # Extract file extension from URL path, ignoring query parameters
+    from urllib.parse import urlparse
+    parsed_url = urlparse(url)
+    path = parsed_url.path
+    suffix = path.split('.')[-1] if '.' in path else 'pdf'
+    
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=f".{suffix}")
 
     for chunk in response.iter_content(1024):

@@ -1,34 +1,49 @@
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional
 
 
 class Experience(BaseModel):
-    company: str = ""
-    role: str = ""
-    start_date: str = ""
-    end_date: str = ""
+    company: Optional[str] = ""
+    role: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
     description: List[str] = []
+
+    @field_validator('company', 'role', 'start_date', 'end_date', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class Education(BaseModel):
-    institution: str = ""
-    degree: str = ""
-    year: str = ""
+    institution: Optional[str] = ""
+    degree: Optional[str] = ""
+    year: Optional[str] = ""
+
+    @field_validator('institution', 'degree', 'year', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class Project(BaseModel):
-    title: str = ""
-    start_date: str = ""
-    end_date: str = ""
+    title: Optional[str] = ""
+    start_date: Optional[str] = ""
+    end_date: Optional[str] = ""
     description: List[str] = []
-    link: str = ""
+    link: Optional[str] = ""
+
+    @field_validator('title', 'start_date', 'end_date', 'link', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class ResumeSchema(BaseModel):
-    name: str = ""
-    email: str = ""
-    phone: str = ""
-    summary: str = ""
+    name: Optional[str] = ""
+    email: Optional[str] = ""
+    phone: Optional[str] = ""
+    summary: Optional[str] = ""
     skills: List[str] = []
     experience: List[Experience] = []
     education: List[Education] = []
@@ -36,6 +51,11 @@ class ResumeSchema(BaseModel):
     certifications: List[str] = []
     achievements: List[str] = []
     links: List[str] = []
+
+    @field_validator('name', 'email', 'phone', 'summary', mode='before')
+    @classmethod
+    def none_to_empty(cls, v):
+        return v if v is not None else ""
 
 
 class JDRequirements(BaseModel):
@@ -46,4 +66,4 @@ class JDRequirements(BaseModel):
     education: str = Field(description="Educational qualification required")
     tools_and_technologies: List[str] = Field(description="Tools, frameworks, software required")
     soft_skills: List[str] = Field(description="Communication, teamwork etc")
-    responsibilities: List[str] = Field(description="Main job responsibilities")
+    responsibilities: List[str] = Field(description="Main job responsibilities")
